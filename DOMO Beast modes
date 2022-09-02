@@ -3,4 +3,62 @@
 WHEN MIN(`Version Sort`)= 4 THEN 
 (((SUM(CASE WHEN (`Version Sort` = 7) THEN `VALUE` END)/SUM(CASE WHEN (`Version Sort` = 4) THEN `VALUE` END))-1)*100)
 
-----------
+---------- Fixed by
+CASE 
+WHEN SUM(`Comp Code Curr Amt`) FIXED (by `LIFNR LFA1`) !=0 
+THEN SUM(`Amount into Days`) FIXED (BY `LIFNR LFA1`)/(SUM(`Comp Code Curr Amt`) FIXED (by `LIFNR LFA1`))
+END
+
+---------Partition by
+ SUM(`Amount into Days`) OVER (PARTITION BY `Comp Code`)
+ 
+ -------When two selections are made and values change based on those both selections
+ WHEN MIN(`VERSION`) = 'NEXT_YEAR_BUD' and MAX(`VERSION`)='SEP_LE' THEN 
+(((SUM(CASE WHEN (`VERSION` = 'NEXT_YEAR_BUD') THEN `VALUE` END)-SUM(CASE WHEN (`VERSION` = 'SEP_LE') THEN `VALUE` END))/SUM((CASE WHEN (`VERSION` = 'SEP_LE') THEN `VALUE` END)))*100)
+
+------Sigma
+If(IsNull(Round((SumIf([Variable Costs], [Value Type] = "010”) / SumIf([Net Sales], [Value Type] = "010”)) * 100, 2)), 0, Round((SumIf([Variable Costs], [Value Type] = "010") / SumIf([Net Sales], [Value Type] = "010")) * 100, 2))
+
+
+------CSS
+(CASE 
+WHEN COUNT(DISTINCT `MARKET_TEXT`) > 1 OR COUNT(DISTINCT `PERIOD_TYPE`) > 1 
+ THEN CONCAT('<div style="font-size:10px"><b>Please make a selection<br>MARKET / PERIOD</div>')
+
+ WHEN MAX(`PERIOD_TYPE`) IN ('QUARTERLY', 'HALF YEARLY') THEN CONCAT('<div style="font-size:10px"><b>VISIBILITY (%) | ',RIGHT(MAX(`YEAR_QTR`), 2), ' ', LEFT(MAX(`YEAR_QTR`), 4),'</div><div style="font-size:10px;color:#800000"><b>', MAX(`MARKET_TEXT`), ' | ', MAX((CASE 
+ WHEN `CATEGORY` = 'PET NUTRITION' THEN 'PET'
+ ELSE `CATEGORY`
+ END)), ' - ', MAX(`BRAND`), '</b></div>')
+ 
+ ELSE CONCAT('<div style="font-size:10px"><b>VISIBILITY (%) | ',MAX(`CALYEAR`),'</div><div style="font-size:10px;color:#800000"><b>', MAX(`MARKET_TEXT`), ' | ', MAX((CASE 
+ WHEN `CATEGORY` = 'PET NUTRITION' THEN 'PET'
+ ELSE `CATEGORY`
+ END)), ' - ', MAX(`BRAND`), '</div>')
+ 
+ ------Simple CSS
+ CASE WHEN COUNT(DISTINCT `YEAR`)=1 THEN CONCAT('<div style="font-size:10px";font-weight: bold"><b>',  'Based on confirmed SGA numbers')  ELSE CONCAT('<div style="font-size:10px;font-weight: bold"><b>', 'Based on confirmed SGA numbers’) END
+
+-------Entitlement policy check:
+Select distinct "COMP_CODE", "SAP_ID" from "CROSS_FUNCTIONAL"."SECURITY"."SAP_ENTITLEMENT" where "USER_EMAIL" = 'BP_SAISHIVA_THADISHETTY@COLPAL.COM'
+
+-------Needed MEtric value / Total Metric value
+((COUNT(DISTINCT (CASE WHEN (`POMISS` < 0)  and `METRIC`='PO Created After Invoice Date' THEN `DOCID` END)) / COUNT(DISTINCT (CASE WHEN (`METRIC` = 'Totals') THEN `DOCID` END))) * 100) 
+
+-------Metric based values
+(CASE 
+
+WHEN (MAX(LENGTH(`METRIC`)) = 29) and MAX(`METRIC`)='PO Created After Invoice Date' THEN ((COUNT(DISTINCT (CASE WHEN ((`POMISS` < 0) ) THEN `DOCID` END)) / COUNT(DISTINCT (CASE WHEN (`METRIC` = 'Totals') THEN `DOCID` END))) * 100) 
+
+WHEN (MAX(LENGTH(`METRIC`)) = 33) THEN ((COUNT(DISTINCT (CASE WHEN ((`Vendor Creation Issue` < 0) AND (`METRIC` = 'Vendor Created After Invoice Date')) THEN `DOCID` END)) / COUNT(DISTINCT (CASE WHEN (`METRIC` = 'Totals') THEN `DOCID` END))) * 100) 
+
+WHEN (MAX(LENGTH(`METRIC`)) = 20) THEN ((COUNT(DISTINCT (CASE WHEN ((`Invoices Paid On Time or Not` = 'Paid On Time') AND (`METRIC` = 'Invoice Paid On Time')) THEN `DOCID` END)) / COUNT(DISTINCT (CASE WHEN (`METRIC` = 'Totals') THEN `DOCID` END))) * 100) 
+
+WHEN (MAX(LENGTH(`METRIC`)) = 31) THEN ((COUNT(DISTINCT (CASE WHEN ((`INVAFTRDUE` = 1) AND (`METRIC` = 'Invoice Received After Due Date')) THEN `DOCID` END)) / COUNT(DISTINCT (CASE WHEN (`METRIC` = 'Totals') THEN `DOCID` END))) * 100) 
+
+WHEN (MAX(LENGTH(`METRIC`)) = 39) THEN ((COUNT(DISTINCT (CASE WHEN ((`INVAFTR10DUE` = 1) AND (`METRIC` = 'Invoice Received 10 Days After Due Date')) THEN `DOCID` END)) / COUNT(DISTINCT (CASE WHEN (`METRIC` = 'Totals') THEN `DOCID` END))) * 100) 
+
+WHEN (MAX(LENGTH(`METRIC`)) = 20) THEN ((COUNT(DISTINCT (CASE WHEN ((`Invoices Paid On Time or Not` = 'Paid On Time') AND (`METRIC` = 'Invoice Paid On Time')) THEN `DOCID` END)) / COUNT(DISTINCT (CASE WHEN (`METRIC` = 'Totals') THEN `DOCID` END))) * 100) 
+
+END)
+
+-------
