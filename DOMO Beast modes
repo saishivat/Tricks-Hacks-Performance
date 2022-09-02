@@ -1,0 +1,6 @@
+---------%More/%Less compared to other ((a-b/a)*100)
+
+WHEN MIN(`Version Sort`)= 4 THEN 
+(((SUM(CASE WHEN (`Version Sort` = 7) THEN `VALUE` END)/SUM(CASE WHEN (`Version Sort` = 4) THEN `VALUE` END))-1)*100)
+
+----------
