@@ -1,0 +1,48 @@
+//----- using Flags/Integers for characters for quicker search 
+
+CASE WHEN ("VERSION") = 'LY Actual' THEN 1
+WHEN ("VERSION") = 'Budget' THEN 2 
+WHEN ("VERSION") = 'Mar LE' THEN 3 
+WHEN ("VERSION") = 'May LE' THEN 4 
+WHEN ("VERSION") = 'Budget NY' THEN 5 
+WHEN ("VERSION") = 'Sep LE' THEN 6 
+WHEN ("VERSION") = 'Actual' THEN 7 
+END AS "Version Sort",
+
+//------Data updated time
+current_timestamp() as "INGESTION_TIME" //---- at the end of the query so that when table updates last second is taken as udpated time
+
+//------limiting rows by taking only non zero values while pivoting table
+WHERE ("BASE_VOLUME"+"SPI")  != 0
+
+//------Quarter and Month conversion
+CASE 
+WHEN MONTH = '01' THEN 'Jan'
+WHEN MONTH = '02' THEN 'Feb'
+WHEN MONTH = '03' THEN 'Mar'
+WHEN MONTH = '04' THEN 'Apr'
+WHEN MONTH = '05' THEN 'May'
+WHEN MONTH = '06' THEN 'Jun'
+WHEN MONTH = '07' THEN 'Jul'
+WHEN MONTH = '08' THEN 'Aug'
+WHEN MONTH = '09' THEN 'Sep'
+WHEN MONTH = '10' THEN 'Oct'
+WHEN MONTH = '11' THEN 'Nov'
+WHEN MONTH = '12' THEN 'Dec'
+END As "Month Desc",
+
+CASE 
+WHEN QUARTER = '1' THEN 'Q1'
+WHEN QUARTER = '2' THEN 'Q2'
+WHEN QUARTER = '3' THEN 'Q3'
+WHEN QUARTER = '4' THEN 'Q4'
+END As "Quarter Desc",
+
+//-----Order by most used columns for indexing and quicker query
+ORDER BY  "CURRENCY" , "VERSION"
+
+//-----CTE
+WITH DETAIL as (full Query)
+SELECT a,b,c from DETAIL
+
+//-----
