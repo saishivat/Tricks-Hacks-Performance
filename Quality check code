@@ -1,0 +1,162 @@
+---- Below is from dashboard table
+WITH Main as
+(
+SELECT 
+"YEAR",
+"COMP_CODE",
+"VERSION",
+"CURRENCY",
+  
+SUM("OPERATING_PROFIT") as "OPERATING_PROFIT", 
+SUM("TONS_TOTAL") as "TONS_TOTAL",  
+SUM("PIECES_TOTAL") as "PIECES_TOTAL" ,  
+SUM("GROSS_SALES(NET)") as "GROSS_SALES(NET)",  
+SUM("GROSS_TO_NET") as "GROSS_TO_NET",  
+SUM("NET_SALES") as "NET_SALES",  
+SUM("VARIABLE_COST") as "VARIABLE_COST",
+    
+SUM("BASE_VOLUME") as "BASE_VOLUME",
+SUM("ALL_IN_VOLUME") as "ALL_IN_VOLUME" , 
+SUM("SPI") as "SPI" ,
+SUM("FX") as "FX" ,
+SUM("NET_SALES_CP") as "NET_SALES_CP" ,
+SUM("NET_SALES_PP") as "NET_SALES_PP" 
+
+from "DEV_FIN_HUB"."CON_FI_PNL"."SGA_PNL_SUMMARY"
+WHERE 
+//"YEAR" = 2022 AND "MONTH" in (1) AND   
+"VERSION" IN ('ACTUAL', 'BUDGET', 'MAY_LE', 'MAR_LE','SEP_LE') 
+//AND "CURRENCY" = 'USD'
+//AND "COMP_CODE" = 'PH71'
+GROUP BY 1,2,3,4
+),
+
+
+--- Getting numbers from mb fin table
+SGA as 
+(
+SELECT
+"CALYEAR" as "YEAR",
+"COMP_CODE",
+ CASE 
+  WHEN "/BIC/MB_PVCP" = '' THEN 'ACTUAL'
+  WHEN "/BIC/MB_PVCP" = 'BNY' THEN 'BUDGET' 
+  WHEN "/BIC/MB_PVCP" = 'E03' THEN 'MAR_LE' 
+  WHEN "/BIC/MB_PVCP" = 'E05' THEN 'MAY_LE' 
+  WHEN "/BIC/MB_PVCP" = 'E09' THEN 'SEP_LE' 
+  ELSE "/BIC/MB_PVCP" 
+  END as "VERSION", 
+"CURRENCY",
+
+SUM("/BIC/MBSGAVOL") as "BASE_VOLUME",
+SUM("/BIC/MBSGAVOL") as "ALL_IN_VOLUME", -- need to write with formula including cluster, check formula
+SUM("/BIC/MBSGAASP") as "SPI",
+SUM("/BIC/MBSGAFX") as "FX",
+SUM("/BIC/MBNS_CP") as "NET_SALES_CP",
+SUM("/BIC/MBNS_PP") as "NET_SALES_PP"
+
+FROM "PSA_PROD"."BI_BW_FI"."/BIC/AD_MB_FIN00" 
+  
+-- conditions
+WHERE 
+//"CALYEAR" = '2021' AND CALMONTH IN (2) AND
+ "/BIC/MB_PVPP" = '' -- Version Previous Period
+AND "/BIC/MB_PVCP" IN ('','BNY','E03', 'E05','E09') 
+//AND "CURRENCY" = 'USD'
+//AND "COMP_CODE" = 'PH71'
+Group by 1,2,3,4
+),
+
+
+-- Getting numbers from pnl view source table
+PNL as 
+(
+SELECT
+"Calendar Year" as "YEAR",
+"Company Code",
+   CASE 
+  WHEN "Version" = '' THEN 'ACTUAL'
+  WHEN "Version" = 'BNY' THEN 'BUDGET' 
+  WHEN "Version" = 'E03' THEN 'MAR_LE' 
+  WHEN "Version" = 'E05' THEN 'MAY_LE' 
+  WHEN "Version" = 'E09' THEN 'SEP_LE' 
+  ELSE "Version" 
+  END as "VERSION",
+"Currency",
+  
+SUM("Operating Profit") as "OPERATING_PROFIT",
+SUM("Tons") as "Tons",  
+SUM("Pieces") as "Pieces",  
+SUM("Gross Sales (net)") as "Gross Sales (net)",  
+SUM("Gross to Net") as "Gross to Net",  
+SUM("Net Sales") as "Net Sales",  
+SUM("Variable Costs") as "Variable Costs" 
+
+FROM "CROSS_FUNCTIONAL"."PNL_CURATED"."PNL_ACT_PLN_view" 
+WHERE 
+"Version" IN ('','BNY','E03', 'E05','E09')  -- 
+//AND "Calendar Year"  = '2021' AND "Calendar Month" IN (2) 
+AND "Multi Pack Flag" IN ('', '3','0','8','9')   -- Given by business
+AND "Inter Company Flag" IN ('', '3','0','8')  -- Given by business
+AND ("Currency_Flag" || "Currency") != 'LCUSD'
+//AND "Currency" = 'USD'
+Group by 1,2,3,4
+)
+
+-- QC query to compare metrics at different version
+
+SELECT
+MAIN."YEAR",
+MAIN.COMP_CODE, 
+MAIN."VERSION",
+MAIN."CURRENCY",
+
+MAIN."OPERATING_PROFIT" - PNL."OPERATING_PROFIT" as "OPERATING_PROFIT",
+MAIN."TONS_TOTAL" - PNL."Tons" as "TONS_TOTAL",  
+MAIN."PIECES_TOTAL" - PNL."Pieces" as "PIECES_TOTAL" ,  
+MAIN."GROSS_SALES(NET)" - PNL."Gross Sales (net)" as "GROSS_SALES(NET)",  
+MAIN."GROSS_TO_NET" - PNL."Gross to Net" as "GROSS_TO_NET",  
+MAIN."NET_SALES" - PNL."Net Sales" as "NET_SALES",  
+MAIN."VARIABLE_COST" - PNL."Variable Costs" as "VARIABLE_COST",
+
+MAIN."BASE_VOLUME" - SGA."BASE_VOLUME" as "BASE_VOLUME" ,
+MAIN."ALL_IN_VOLUME"  - SGA."ALL_IN_VOLUME" as "ALL_IN_VOLUME" , 
+MAIN."SPI"  - SGA."SPI" as "SPI" ,
+MAIN."FX"  - SGA."FX" as "FX" ,
+MAIN."NET_SALES_CP"  - SGA."NET_SALES_CP" as "NET_SALES_CP" ,
+MAIN."NET_SALES_PP"  - SGA."NET_SALES_PP" as "NET_SALES_PP" 
+
+FROM MAIN
+LEFT JOIN SGA ON MAIN."COMP_CODE" = SGA."COMP_CODE" AND MAIN."VERSION" = SGA."VERSION" AND MAIN."CURRENCY" = SGA."CURRENCY" AND MAIN."YEAR" = SGA."YEAR" 
+LEFT JOIN PNL ON MAIN."COMP_CODE" = PNL."Company Code" AND MAIN."VERSION" = PNL."VERSION" AND MAIN."CURRENCY" = PNL."Currency" AND MAIN."YEAR" = PNL."YEAR" 
+
+ORDER BY 1,2,3,4
+
+
+//
+//
+//
+//
+//SELECT
+//distinct
+//"Calendar Year" as "YEAR",
+//"Company Code",
+// "Version"
+//
+//FROM "CROSS_FUNCTIONAL"."PNL_CURATED"."PNL_ACT_PLN_view" 
+//WHERE 
+//"Version" IN ('','BNY','E03', 'E05','E09')  -- 
+////AND "Calendar Year"  = '2021'
+//AND "Multi Pack Flag" IN ('', '3','0','8','9')   -- Given by business
+//AND "Inter Company Flag" IN ('', '3','0','8')  -- Given by business
+//AND ("Currency_Flag" || "Currency") != 'LCUSD'
+////AND "Currency" = 'USD'
+////Group by 1,2,3,4
+//
+//
+//
+//
+//
+//
+//
+//
