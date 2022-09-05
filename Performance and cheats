@@ -90,3 +90,11 @@ SELECT
 FROM film 
 -- Filter where special_features contains 'Deleted Scenes'
 WHERE special_features @> ARRAY['Deleted Scenes'];
+
+//------ Getting record count by a specific date/column
+SELECT 
+  DATE_TRUNC('day', rental_date) AS rental_day,
+  -- Count total number of rentals 
+  COUNT(*) AS rentals 
+FROM rental
+GROUP BY 1;
