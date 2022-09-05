@@ -98,3 +98,13 @@ SELECT
   COUNT(*) AS rentals 
 FROM rental
 GROUP BY 1;
+
+//------ Select only the street name from the address table(35 hanuman_nagar, 63 megapolis...)
+SELECT 
+SUBSTRING(address FROM POSITION(' ' IN address)+1 FOR LENGTH(address))
+FROM 
+
+//--------LPAD, RPAD, LTRIM, RTRIM, SUBSTR, SUBSTRING,CHAR_LENGTH, LENGTH, POSITION, SUBPOS
+//--------GROUP BY ROLL UP, GROUP BY CUBE
+//--------
+  address;
