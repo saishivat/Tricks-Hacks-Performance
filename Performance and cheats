@@ -66,3 +66,19 @@ where start_time between '2022-08-06 10:43:00' and '2022-08-06 10:50:00'
 and warehouse_name = 'FIN_VIZ'
 and user_name = 'BP_SAISHIVA_THADISHETTY@COLPAL.COM'
 order by total_elapsed_time desc;
+
+//------Querying from array
+SELECT 
+  title, 
+  special_features 
+FROM film
+-- Use the array index of the special_features column
+WHERE special_features[2] = 'Deleted Scenes';
+
+//------Querying from array if any values in the array column is required text
+SELECT
+  title, 
+  special_features 
+FROM film 
+-- Modify the query to use the ANY function 
+WHERE 'Trailers' = ANY (special_features);
