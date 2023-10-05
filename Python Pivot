@@ -1,0 +1,20 @@
+# Import the domomagic package into the script 
+from domomagic import *
+import pandas as pd
+
+# read data from inputs into a data frame
+input1 = read_dataframe('Combine Columns 1')
+
+# Reshape the data using pivot_table
+df = input1.pivot_table(
+    index=['Item', 'Whs', 'Customer', 'Cust Fcst Status'],
+    columns='Fcst Year-Month',
+    values='Approved Ship Fcst',
+    aggfunc='first'
+)
+
+# Reset the index
+df.reset_index(inplace=True)
+
+# write a data frame so it's available to the next action
+write_dataframe(df)
