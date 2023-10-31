@@ -2,7 +2,7 @@
 from domomagic import *
 
 # read data from inputs into a data frame
-df2 = read_dataframe('GXO_Master_Data')
+df2 = read_dataframe('Master_Data')
 df1 = read_dataframe('Alter Columns')
 
 
