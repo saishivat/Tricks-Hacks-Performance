@@ -1,0 +1,26 @@
+# Import the domomagic package into the script 
+from domomagic import *
+
+# read data from inputs into a data frame
+df2 = read_dataframe('GXO_Master_Data')
+df1 = read_dataframe('Alter Columns')
+
+
+# write your script here
+if df2['Total column'][1] == (len(df1.axes[1])):
+    df2.drop(['Total column'], axis =1, inplace = True)
+    list1 = list(df2.columns)
+    list2 = list(df1.columns)
+    
+    #df1.drop(['Schema Status'], axis =1, inplace = True)
+    list1.sort()
+    list2.sort()
+    if list1 == list2:
+        df1['Schema Status']= "Same Schema"
+    else:
+        df1['Schema Status']= "Not Same"
+else:
+    df1['Schema Status']= "Not Same"
+  
+# write a data frame so it's available to the next action
+write_dataframe(df1)
