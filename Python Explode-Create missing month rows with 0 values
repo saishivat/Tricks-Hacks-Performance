@@ -1,0 +1,34 @@
+# Import the domomagic package into the script 
+from domomagic import *
+
+# read data from inputs into a data frame
+df = read_dataframe('Join Data 3')
+
+# write your script here
+import pandas as pd
+
+# Create a new DataFrame to store the result
+result_df = pd.DataFrame(columns=df.columns)
+
+# Find the maximum value for 'Months from Main unit start date'
+max_months = 45
+
+# Iterate through unique combinations of 'Part SKU' and 'Model Family'
+for _, group in df.groupby(['Model Family','Compatible Main Unit','POS Start Month']):
+    # Generate a range of 'Months from Main unit start date' values from 0 to the maximum
+    months_range = pd.DataFrame({'Months from POS start date': range(max_months + 1)})
+    
+    # Add 'Compatible Main Unit' and 'Model Family' columns to the range DataFrame
+    months_range['Compatible Main Unit'] = group['Compatible Main Unit'].iloc[0]
+    months_range['Model Family'] = group['Model Family'].iloc[0]
+    months_range['POS Start Month'] = group['POS Start Month'].iloc[0]
+
+    
+    # Merge the generated range with the group on 'Months from POS start date', 'Compatible Main Unit', and 'Model Family'
+    merged = pd.merge(months_range, group, on=['Months from POS start date', 'Compatible Main Unit', 'Model Family', 'POS Start Month'], how='left').fillna(0)
+    
+    # Append the merged DataFrame to the result DataFrame
+    result_df = result_df.append(merged, ignore_index=True)
+
+# write a data frame so it's available to the next action
+write_dataframe(result_df)
